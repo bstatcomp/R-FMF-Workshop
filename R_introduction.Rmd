@@ -1,7 +1,7 @@
 ---
-title: "R introduction and dplyr"
+title: "R introduction and visualization"
 author: "Gregor Pirs, Jure Demsar and Erik Strumbelj"
-date: "25/7/2019"
+date: "8/1/2020"
 output:
     prettydoc::html_pretty:
       highlight: github
@@ -428,6 +428,11 @@ install.packages("car") # install package
 library(car) # load the package into workspace
 ```
 
+To remove packages call `remove.packages()`
+
+```{r eval = FALSE}
+remove.packages("car")
+```
 
 
 # Data import {#bpod}
@@ -476,15 +481,16 @@ a decimal comma. Therefore
 claim_data <- read.csv("./data/insurance02.csv", sep = ";", dec = ",")
 ```
 
-Data is often saved as xlsx. To read data from xlsx, we use the `read.xlsx`
-function from the package __xlsx__. 
-However, this function can be quite slow, so if you are dealing with
-large data frames, it might be better to save the excel file as a csv file
-and then read it as csv.
 
-```{r eval = FALSE}
-library(xlsx)
-claim_data <- read.csv("./data/insurance03.xlsx")
+## Saving R files
+R allows us to save serialized R files, which can be any objects in R. This can either be data, a single variable, a whole model, etc. The functions for that are `readRDS()` and `saveRDS()`. If we wish to save several results, for example a data frame and the model, we can create a list with these two elements and save them using `saveRDS()`.
+
+```{r eval = TRUE}
+tmp_list <- list(df = claim_data, x = c(1,2))
+saveRDS(tmp_list, "./RDS_files/my_saved_RDS.rds")
+tmp_load <- readRDS("./RDS_files/my_saved_RDS.rds")
+head(tmp_load$df)
+tmp_load$x
 ```
 
 # If statement
@@ -724,194 +730,7 @@ agg_claim_data
 
 ```
 
-All of the above can be simplified using the **dplyr** packages presented in the next chapter.
-
-# Data wrangling with dplyr
-Dplyr is a package for easier data manipulation. It is a part of a collection of
-packages called **tidyverse**, which consist of several R packages intended for
-data science. Dplyr is especially useful for data frame manipulation.
-
-The main format of working with data in tidyverse is a **tibble**. This data
-structure is very smilar to base R's data frame, however it is designed for
-easier work with other packages in tidyverse and also provides a different
-print output. Let's look at it on our insurance data set.
-
-```{r message=FALSE, warning=FALSE}
-library(dplyr)
-```
-```{r}
-claim_data <- read.csv("./data/insurance01.csv")
-head(claim_data)
-
-claim_data <- as_tibble(claim_data)
-claim_data
-```
-
-A tibble only shows the first 10 rows of the data set for clarity. Additionally,
-it only prints as many columns as fit into a page, and lists other columns
-below. If we wish to see all of the tibble, we can use the function `View()`.
-Under the variable names, a tibble shows the type of the variables. 
-
-Now that we have our starting data set, we can begin manipulating it. This
-usually consists of selecting specific rows and columns, and adding statistics
-derived from variables in the data frame. Below we describe five functions
-which will enable us dynamic data set manipulation.
-
-## Filter
-The function `filter()` allows us to select rows, based on values of the
-variables. As input it gets a tibble and the conditions and it outputs a new
-tibble that consists only of desired rows.
-
-```{r warning=FALSE}
-filter(claim_data, region == "southwest")
-filter(claim_data, region == "southwest", age >= 30)
-```
-
-The conditions in filter use and---all conditions have to be satisfied. If
-we want to use or, we have to divide them with a pipe |.
-
-```{r}
-filter(claim_data, region == "southwest" | region == "northwest")
-```
-
-Or, the same can be achieved by using the operator %in%.
-
-```{r}
-filter(claim_data, region %in% c("southwest", "northwest"))
-```
-
-For example, let's say we are interested in doing further analysis on
-people older than 29, who live in the south. We can construct a new tibble,
-where we filter out the unnecessary rows.
-
-```{r}
-claim_df <- filter(claim_data, region %in% c("southwest", "southeast"), 
-                   age >= 30)
-```
-
-## Arrange
-To arrange data we use dplyr's function `arrange()`, which gets a tibble and the
-variables on which to arrange. If we want a descending arrangement, we have to 
-use function `desc()`.
-
-```{r}
-arrange(claim_df, age)
-arrange(claim_df, age, desc(charges))
-```
-
-
-
-## Select
-In our current data set we have a relatively small number of columns, so 
-working with our tibble is not too complicated. However, we often encounter
-data sets with large numbers of columns. In such situations, we might want
-to select a subset of columns. For that we have the function `select`.
-
-To select certain columns, input the names into select.
-
-```{r}
-select(claim_df, age, sex)
-```
-
-We can also select all columns between two columns with a colon. Using a
-minus sign will select all columns except the ones in the expression.
-
-```{r}
-select(claim_df, bmi:region)
-select(claim_df, -(bmi:region))
-```
-
-There are several utility functions that let us select columns based on
-their names, for example `ends_with`, `starts_with`, or `contains`.
-
-```{r}
-select(claim_df, starts_with("c"))
-```
-
-
-
-## Mutate
-To create new variables in the data frame, dependent on the existing variables,
-we can use the `mutate()` function. For example, let's create a new variable,
-which will consist of charges per insured person.
-
-```{r}
-claim_df <- mutate(claim_df, charges_per_person = charges / (children + 1))
-claim_df
-```
-
-We can also use own functions when creating new variables. 
-For example, let us create a new variable, which will classify the
-insured according to the standard BMI categories.
-
-```{r}
-classify_bmi <- function (bmi) {
-  bmi_classes <- rep("underweight", times = length(bmi))
-  bmi_classes[bmi >= 18.5 & bmi < 25] <- "normal"
-  bmi_classes[bmi >= 25]              <- "overweight"
-  bmi_classes <- factor(bmi_classes, levels = c("underweight", 
-                                                "normal", 
-                                                "overweight"),
-                        ordered = TRUE)
-  return(bmi_classes)
-}
-claim_df <- mutate(claim_df, bmi_class = classify_bmi(bmi))
-claim_df
-```
-The tibble is too wide to show all variables. Let us use select to
-check the values of our new variable.
-
-```{r}
-select(claim_df, bmi, bmi_class)
-```
-
-
-## Summarise
-The `summarise` function aggregates the data according to some condition.
-Conditions are provided with the function `group_by`, if they are not, 
-the data are aggregated over the whole tibble.
-
-```{r}
-summarise(claim_df, mean_age = mean(age), mean_charges = mean(charges))
-```
-
-To get something more meaningful, we first need to group the data.
-For example let us look at the mean charges, dependent on whether
-the insured is a smoker and his BMI class.
-
-```{r}
-g_data <- group_by(claim_df, smoker, bmi_class)
-summarise(g_data, mean_charges = mean(charges))
-```
-
-
-
-
-## The pipe
-To arrive at the above results we made several changes to the original data
-set. However, we can use the pipe `%>%` to do all these calls sequentially,
-without
-creating an additional data set, or changing the original.
-
-Let us demonstrate how to get the same result as above with use of the pipe.
-
-```{r}
-claim_df %>%
-  filter(age >= 30, region %in% c("southwest", "southeast")) %>%
-  mutate(bmi_class = classify_bmi(bmi)) %>%
-  group_by(smoker, bmi_class) %>%
-  summarise(mean_charges = mean(charges))
-```
-
-To count the number of cases in each group, use `count()`.
-
-```{r}
-claim_df %>%
-  filter(age >= 30, region %in% c("southwest", "southeast")) %>%
-  mutate(bmi_class = classify_bmi(bmi)) %>%
-  group_by(smoker, bmi_class) %>%
-  count()
-```
+All of the above can be simplified using the **dplyr** package, which is out of scope for this workshop.
 
 
 # Long and wide data formats
@@ -935,13 +754,11 @@ data frame is therefore in a wide format. Let us convert it to a long format,
 and then back to wide, to see how to use `gather` and `spread`.
 ```{r, warning = FALSE}
 library(tidyr)
-stock_df <- datasets::EuStockMarkets
-stock_df <- as_tibble(data.frame(X = as.matrix(stock_df), time=time(stock_df)))
-stock_df
-df_long <- gather(stock_df, key = "stock", value = "price", -time)
-df_long
-df_wide <- spread(df_long, key = "stock", value = "price")
-df_wide
+stock_df <- readRDS("./data/stocks.rds")
+df_long  <- gather(stock_df, key = "stock", value = "price", -time)
+head(df_long)
+df_wide  <- spread(df_long, key = "stock", value = "price")
+head(df_wide)
 ```
 
 
@@ -972,6 +789,7 @@ df_dax <- df_long[df_long$stock == "X.DAX", ]
 ggplot(data = df_dax, aes(x = time, y = price)) +
   geom_line()
 ```
+
 Code above executes the described steps. First, we tell ggplot that our data source will be `df_dax`, note here that plots expect data in the long format. The `aes()` function defines the aesthetic mapping, in the above example we simply map the `time` variable to the x-axis and the `price` variable to the y-axis. In ggplot2 chart types are defined through geometrics (geoms), for example `geom_line()` tells ggplot to draw a line chart. We can easily stack geoms together. Geoms that appear later in our code are drawn on top of previous geoms.
 
 With plots like the one above it makes sense to show the absolute value, otherwise the plots can be deceiving. For example, let us look at a subset of the above and use the same plot.
@@ -995,13 +813,14 @@ Here we used `coord_cartesian` to manually scale the y-axis. We see that the inc
 
 So far we only plotted the prices of one stock. Let us compare the values of all stocks in our data set. The best way in this case, to directly compare the prices is to plot them on the same plot, and use different colours to distinguish between them. Luckily, this is very easy with ggplot, as we only need to add another aesthetic mapping. We will map the variable `stock` to colour.
 
-```{r, warning = FALSE}
+```{r, warning = FALSE, message = FALSE}
 ggplot(data = df_long, aes(x = time, y = price, color = stock)) +
   geom_line() +
   coord_cartesian(ylim = c(0, 8100)) +
   ggtitle("Four stock prices from 1991 to 1999") +
   theme_bw()
 ```
+
 Additionally, we added a plot title, and used a black-and-white theme, instead of the default grey. There are several arguments that can be passed to `theme` to generate output that you desire. `theme_bw` is a special case that provides us with the above output. See `?theme` and `?theme_bw` for more information. 
 
 ### Insurance claim data
@@ -1012,7 +831,7 @@ ggplot(data = agg_claim_data, aes(x = bmi, y = x, fill = smoker)) +
   geom_col(position = "dodge")
 ```
 
-We used `geom_col` to generate the bars, see `?geom_col` for additionaly information. The `fill` aesthetic is more appropriate here than color, since color would only color the edges, while fill fills the whole area. Additionally, we used `position = "dodge"`, otherwise the bars would be stacked.
+We used `geom_col` to generate the bars, see `?geom_col` for additional information. The `fill` aesthetic is more appropriate here than color, since color would only color the edges, while fill fills the whole area. Additionally, we used `position = "dodge"`, otherwise the bars would be stacked.
 
 The plot looks good. However we can approach this another way. Instead of using colors, we can divide the graph into facets, depending on some variable.
 
@@ -1031,7 +850,7 @@ ggplot(data = agg_claim_data2, aes(x = bmi, y = x)) +
   facet_wrap(sex ~ smoker)
 ```
 
-Barplots only show point estimates and give us no information about the variability of the charges -- this is a major drawback. Additionally, this makes it very easy to "cheat" with them. Obviously there is an increasing trend in the charges that rises with bmi. However, for non-smokers it is not that drastic. But if we wanted someone to believe it is, we could have done something like this.
+Barplots only show point estimates and give us no information about the variability of the charges -- this is a major drawback. Additionally, this makes it very easy to "cheat" with them. Obviously there is an increasing trend in the charges that rises with BMI. However, for non-smokers it is not that drastic. But if we wanted someone to believe it is, we could have done something like this.
 
 ```{r, warning = FALSE}
 tmp_data <- claim_data2[claim_data2$smoker == "no" & claim_data2$bmi_class %in% c("normal", "overweight"), ]
@@ -1042,7 +861,7 @@ ggplot(data = agg_tmp_data, aes(x = bmi, y = x)) +
   labs(y = "charges")
 ```
 
-At first glance the difference is huge, while we already know that it is rather small. But someone without attention to detail might not notice this, and would believe our story. The only this we did is change the scale, similar to the example with stocks data. Additionally, this is the first time we used the `labs` layer, which allows us to rename the labels.
+At first glance the difference is huge, while we already know that it is rather small. But someone who is not paying attention to detail might not notice this, and would believe our story. The only thing we did is change the scale, similar to the example with stocks data. Additionally, this is the first time we used the `labs` layer, which allows us to rename the labels.
 
 So we argue that point statistics are not the best summary we can provide to our audience. A better alternative would be to provide some kind of uncertainty estimate, or better yet, visualize the whole distribution. A useful plot for such visualization is the boxplot.
 
@@ -1064,11 +883,49 @@ ggplot(data = claim_data2, aes(x = charges, fill = smoker)) +
 
 
 
-### iris data set
-Let us start with a fairly basic data set.
+### Movies
+For the last part of the ggplot chapter, we will use **movies** data set. It contains 4924 observations of 24 variables, such as title, year, budget, rating, etc. Let us look at our data set.
 ```{r, warning = FALSE}
-data(iris)
-head(iris)
-ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+movies_df <- read.csv2("./data/movies.csv")
+head(movies_df)
+```
+
+An interesting insight in this data set would be, whether a higher budget yields a better rating. To see a connection between two numerical variables, a useful plot is a **scatterplot**.
+
+```{r, warning = FALSE}
+ggplot(data = movies_df, aes(x = budget, y = rating)) +
   geom_point()
 ```
+
+This plot looks rather messy. The biggest problem is the overlapping points which prevent us to properly see the density of points. We will change the transparency of the points to get a better feel for the density. Additionally, let us add more ticks on the x-axis and add a title.
+
+```{r, warning = FALSE}
+ggplot(data = movies_df, aes(x = budget, y = rating)) +
+  geom_point(alpha = 0.2) +
+  ggtitle("Ratings of movies based on budget") +
+  scale_x_continuous(breaks = c(seq(from = 0, to = 200000000, by = 10000000))) +
+  coord_cartesian(ylim = c(0, 10))
+```
+
+OK, we can better see the density now. However the ticks are overlapping. We will correct this by rotating the ticks with `theme`. Additionally, in such situation it makes sense to get some visual summary of the trend in the plots. The simplest way to do this in a scatterplot is by using `geom_smooth()`. For the method we will pick a linear model, however `geom_smooth()` allows us to use more flexible models, such as locally estimated scatterplot smoothing (loess).
+
+```{r, warning = FALSE}
+ggplot(data = movies_df, aes(x = budget, y = rating)) +
+  geom_point(alpha = 0.2) +
+  ggtitle("Ratings of movies based on budget") +
+  scale_x_continuous(breaks = c(seq(from = 0, to = 200000000, by = 10000000))) +
+  coord_cartesian(ylim = c(0, 10)) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  geom_smooth(method = "lm")
+```
+
+
+# Other tips and further reading
+
+* To dynamically set the working directory in R Studio to the parent folder of a R script use `setwd(dirname(rstudioapi::getSourceEditorContext()$path))`.
+* To avoid slow R loops use the apply family of functions. See `?apply` and `?lapply`.
+* Use `getAnywhere(function_name)` to get the source code of any function.
+* Getting started with R Studio: https://www.youtube.com/watch?v=lVKMsaWju8w
+* Official R manuals: https://cran.r-project.org/manuals.html
+* Cheatsheets: https://www.rstudio.com/resources/cheatsheets/
+* Workshop on R, dplyr, ggplot2, and R Markdown: https://github.com/bstatcomp/Rworkshop

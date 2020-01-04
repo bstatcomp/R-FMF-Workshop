@@ -1,0 +1,70 @@
+---
+title: "R workshop exercises"
+author: "Gregor Pirs, Jure Demsar and Erik Strumbelj"
+date: "8/1/2020"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    toc: no
+    highlight: github
+---
+
+<div style="text-align:center">
+  <img src="./bstatcomp.png" alt="drawing" width="128"/>
+</div>
+
+
+## Vectors
+Let $m = 9$.
+
+* Create a vector $x$, which is a sequence of equally spaced numbers
+  between -2 and 2 of length $m$.
+* Create a vector $y$ of the squares of first $m$ integers.
+* Create a vector $z$ by dividing $y$ by $x$.
+* Find the mean of $z$.
+* Create a data frame with $x$, $y$ and $z$.
+
+
+## Data frames
+Open the _data_frame_exercise.R_ from the _scripts_ folder and run it. Now you should have a data frame in your working environment. Do the following:
+
+* Summarize the data frame.
+* Print only females.
+* Print all males taller than 180cm.
+* Print average ages across genders.
+
+
+## Functions
+Write a function that takes vectors $x$ and $y$ of the same length and a
+real value $z$. The function should return the number of indices $i$, where
+$x_i + y_i > z$.
+
+
+## Debugging
+Open the _debug_\__exercise.R_ script from the _exercises_ folder. The script contains a small program, which should return all prime numbers up to the parameter. It does so by first looping through all the integers (greater than 2) and second looping  through smaller integers than the current one to check if any of them divide it.  Run the script. Apparently the function does not work as it should.  Debug it with `browser()` by checking the values of variables at each iteration and correct the mistake.
+
+
+## Matrices
+Use the normal random number generator (tip: use seed) to create:
+
+* 4x4 matrix $A$,
+* 2x5 matrix $B$,
+* 5x4 matrix $C$.
+
+Calculate:
+
+* the mean of values in $A$,
+* the variance of values in $A$,
+* the max value in all of the matrices,
+* the sum of $A$ and its transpose,
+* the element-wise product of $A$ and its transpose,
+* the scalar product of $B$ and $C$,
+* the determinant of $B^TB$.
+
+
+## Fibonacci
+Write a function with parameter _n_, which outputs the first $n$ Fibonacci numbers. The $n$-th Fibonacci number is calculated as $F_n = F_{n-1} + F_{n-2}$, $F_0 = 0$, and $F_1 = 1$.
+
+
+## Visualization
+We provided three data sets and visualized some interesting properties. Think about what other properties would be interesting and produce plots that will provide the reader with concise and clear information about them.
