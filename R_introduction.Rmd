@@ -439,7 +439,7 @@ remove.packages("car")
 
 We often encounter data in a csv (comma separated value) format. Different
 pacakges in R allow us to read data from csv, txt, xlsx, etc. formats.
-Here we will go through reading data from csv and xlsx formats.
+Here we will go through reading data from the csv format.
 
 To read csv data use `read.csv` from the
 package `utils`. Before we read the data, we need to check two things.
@@ -457,8 +457,8 @@ thousands separator.
 In our **data** folder, we have medical insurance data set acquired from Kaggle
 (https://www.kaggle.com/easonlai/sample-insurance-claim-prediction-dataset/). 
 To show different reading functions, we saved the data set in three
-different formats---csv with a comma separator, csv with a semi-colon
-separator, and xlsx file. The file also contains a 
+different formats---csv with a comma separator and csv with a semi-colon
+separator. The file also contains a 
 header. Function `head()` returns
 the first six rows of the data frame.
 
